@@ -1,10 +1,28 @@
 package com.driver;
 
+
+
 import java.net.DatagramSocket;
 import java.util.*;
 
 
+class myMessage
+{
+    Date date;
+    String sender;
+    String message;
 
+    public myMessage(Date date, String sender, String message)
+    {
+        this.date = date;
+        this.sender = sender;
+        this.message = message;
+
+
+    }
+
+
+}
 
 public class Gmail extends Email
 {
@@ -13,12 +31,14 @@ public class Gmail extends Email
     //Inbox: Stores mails. Each mail has date (Date), sender (String), message (String). It is guaranteed that message is distinct for all mails.
     //Trash: Stores mails. Each mail has date (Date), sender (String), message (String)
 
-   LinkedList<String>inbox=new LinkedList<>();
-    LinkedList<String>trash=new LinkedList<>();
+
+   LinkedList<myMessage>inbox=new LinkedList<>();
+    LinkedList<myMessage>trash=new LinkedList<>();
 
     HashMap<Date,Integer>numberOfMails=new HashMap<>();
-    HashMap<String,String>inboxMap=new HashMap<>();
-    HashMap<String,String>trashMap=new HashMap<>();
+    HashMap<String,myMessage>inboxMap=new HashMap<>();
+    HashMap<String,myMessage>trashMap=new HashMap<>();
+    HashMap<Date,Integer>dateMap=new HashMap<>();
 
     public Gmail(String emailId, int inboxCapacity)
     {
@@ -35,23 +55,29 @@ public class Gmail extends Email
 
        // String msg=date+""+sender+""+message;
 
+        myMessage myMsg=new myMessage(date,sender,message);
         if(inbox.size()>=inboxCapacity)
         {
-            String msg=inbox.removeFirst();//got the oldest message and removed from the inbox
-            inboxMap.remove(msg);//removed from the inbox hashmap
+
+            myMessage msg=inbox.removeFirst();//got the oldest message and removed from the inbox
+            inboxMap.remove(msg.message);//removed from the inbox hashmap
 
             trash.add(msg); //add the oldest message in trash
-            trashMap.put(msg,date+"-"+sender);//added into trashmap
+            trashMap.put(msg.message,msg);//added into trashmap
 
 
-            inbox.add(message); //then add new message in the inbox
-            inboxMap.put(message,date+"-"+sender);//added new message into inboxmap
+            inbox.add(myMsg); //then add new message in the inbox
+            inboxMap.put(message,myMsg);//added new message into inboxmap
+
+            //dateMap.put(date,dateMap.getOrDefault(date,0)+1);
         }
         else
         {
-            inbox.add(message);
-            inboxMap.put(message,date+"-"+sender);//added new message into inboxmap
+            inbox.add(myMsg);
+            inboxMap.put(message,myMsg);//added new message into inboxmap
+            //dateMap.put(date,dateMap.getOrDefault(date,0)+1);
         }
+
 
         numberOfMails.put(date,numberOfMails.getOrDefault(date,0)+1);
     }
@@ -60,16 +86,24 @@ public class Gmail extends Email
     {
         // Each message is distinct
         // If the given message is found in any mail in the inbox, move the mail to trash, else do nothing
+        if(inbox.size()==0)
+        {
+            return;
+        }
 
         if(inbox.contains(message)) //if message found in the inbox
         {
             inbox.remove(message); //removed from the inbox
-            String value=inboxMap.get(message);
-            inboxMap.remove(message);//removed from inboxmap
-            trash.add(message); //afterthat deleted message moved to trash
+            myMessage value=inboxMap.get(message);
+
+            inboxMap.remove(value.message);//removed from inboxmap
+            trash.add(value); //afterthat deleted message moved to trash
             trashMap.put(message,value);//added into trashmap
+
+
         }
     }
+
 
     public String findLatestMessage()
     {
@@ -81,7 +115,7 @@ public class Gmail extends Email
             return null;
         }
 
-        return inbox.getLast();
+        return inbox.getLast().message;
     }
 
     public String findOldestMessage()
@@ -94,7 +128,7 @@ public class Gmail extends Email
             return null;
         }
 
-        return inbox.getFirst();
+        return inbox.getFirst().message;
 
     }
 
@@ -102,21 +136,30 @@ public class Gmail extends Email
     {
         //find number of mails in the inbox which are received between given dates
         //It is guaranteed that start date <= end date
-
-        int first=0;
-        int second=0;
-
-        if(numberOfMails.containsKey(start))
+        int count=0;
+        for(myMessage x:inbox)
         {
-            first=numberOfMails.get(start);
+            if(x.date.equals(start) && x.date.after(start) && x.date.equals(end) && x.date.before(end))
+            {
+                count++;
+            }
         }
+        return count;
 
-        if(numberOfMails.containsKey(end))
-        {
-            second=numberOfMails.get(end);
-        }
-
-        return first+second;
+//        int first=0;
+//        int second=0;
+//
+//        if(numberOfMails.containsKey(start))
+//        {
+//            first=numberOfMails.get(start);
+//        }
+//
+//        if(numberOfMails.containsKey(end))
+//        {
+//            second=numberOfMails.get(end);
+//        }
+//
+//        return first+second;
     }
 
     public int getInboxSize()
